@@ -1,0 +1,53 @@
+import requests
+import json
+
+# открываем weather map api key
+OWM_API_KEY = 'c2355d4431c9bbadcaec75d1f45173c9'
+OWM_GEO_DIRECT_BASE_URL = 'http://api.openweathermap.org/geo/1.0/direct'
+OWM_WEATHER_BASE_URL = 'https://api.openweathermap.org/data/2.5/weather'
+
+ON_API_GET_AUSTONAUTS = 'http://api.open-notify.org/astros.json'
+
+def reqCoordsByCityName(city_name):
+    return {'q':city_name+',ru', 'appid':OWM_API_KEY}
+
+def reqCurrentWeatherByCoords(lat, lon):
+    return {'lat':lat, 'lon':lon, 'units':'metric', 'lang':'ru', 'appid':OWM_API_KEY}
+
+def formatWeather(respW):
+    weather = "".join(w.get('description')+' ' for w in respW.get('weather'))
+    m = respW.get('main')
+    temperature = str(m.get('temp')) + ' C'
+    humidity = str(m.get('humidity')) + '%'
+    pressure =  str(m.get('pressure')) + ' hPa'
+    #return ['Погода: ' + weather, 'Температура: ' + temperature, 'Влажность: ' + humidity, 'Давление: ' + pressure]
+    return ['Weather: ' + weather, 'Temperature: ' + temperature, 'Humidity: ' + humidity, 'Pressure: ' + pressure]
+
+def printArray(a):
+    for s in a:
+        print(s)
+
+def formatAustonauts(astronauts):
+    return [ str(a.get('name')+'@'+str(a.get('craft'))) for a in astronauts ]
+
+def main():
+    city_name = input("City: ")
+
+    reqG = requests.get(OWM_GEO_DIRECT_BASE_URL, params=reqCoordsByCityName(city_name))
+    respG = reqG.json()
+    if len(respG) == 1:
+        lat, lon = respG[0].get('lat'), respG[0].get('lon')
+        reqW = requests.get(OWM_WEATHER_BASE_URL, params=reqCurrentWeatherByCoords(lat, lon))
+        respW = reqW.json()
+        printArray(formatWeather(respW))
+    else:
+        print('Не нашел подходящий город. ' + ('Нет ни одного.') if len(respG) < 1 else 'Слишком много вариантов.')
+
+    # мой вариант: http://open-notify.org/Open-Notify-API/People-In-Space/
+    print('')
+    reqA = requests.get(ON_API_GET_AUSTONAUTS)
+    respA = reqA.json()
+    print('Number of humans in space: ' + str(respA.get('number')))
+    printArray(formatAustonauts(respA.get('people')))
+
+main()
